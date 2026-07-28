@@ -1,0 +1,123 @@
+{
+  "name": "antigravity-cli",
+  "displayName": "Antigravity CLI",
+  "description": "Open Antigravity CLI (agy) in VS Code terminal — your AI-powered coding assistant",
+  "version": "0.0.1",
+  "publisher": "nuwanthapasindu",
+  "icon": "icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Machine Learning"
+  ],
+  "keywords": [
+    "antigravity",
+    "agy",
+    "ai",
+    "terminal",
+    "cli"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "antigravity.openTerminal",
+        "title": "Antigravity CLI: Open Terminal",
+        "icon": {
+          "light": "icon.png",
+          "dark": "icon.png"
+        }
+      },
+      {
+        "command": "antigravity.restartTerminal",
+        "title": "Antigravity CLI: Restart Terminal",
+        "icon": "$(debug-restart)"
+      },
+      {
+        "command": "antigravity.stopTerminal",
+        "title": "Antigravity CLI: Stop Terminal",
+        "icon": "$(debug-stop)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "antigravity.openTerminal",
+        "key": "ctrl+shift+a",
+        "mac": "cmd+shift+a"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "antigravity-sidebar",
+          "title": "Antigravity CLI",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "antigravity-sidebar": [
+        {
+          "type": "webview",
+          "id": "antigravity.welcomeView",
+          "name": "Antigravity CLI"
+        }
+      ]
+    },
+    "terminal": {
+      "profiles": [
+        {
+          "title": "Antigravity CLI",
+          "id": "antigravity.terminalProfile",
+          "icon": "hubot"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Antigravity CLI",
+      "properties": {
+        "antigravity.executable": {
+          "type": "string",
+          "default": "agy",
+          "description": "Path to the agy executable (default: agy, assuming it is in your PATH)"
+        },
+        "antigravity.defaultArgs": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "Default arguments to pass to agy on launch"
+        }
+      }
+    },
+    "menus": {
+      "editor/title": [
+        {
+          "command": "antigravity.openTerminal",
+          "group": "navigation",
+          "when": "true"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "npx tsc -p ./",
+    "watch": "npx tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "package": "npx @vscode/vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "@vscode/vsce": "^3.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.50.0"
+  }
+}

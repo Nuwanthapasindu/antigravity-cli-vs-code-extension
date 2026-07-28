@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+  <!-- Rocket body -->
+  <path
+    fill-rule="evenodd"
+    clip-rule="evenodd"
+    d="M8 1C6 1 4 4 4 7v1H3l-1 3h1.5L4 13h8l.5-2H14l-1-3h-1V7c0-3-2-6-4-6z"
+    fill="currentColor"
+    opacity="0.15"
+  />
+  <!-- Rocket outline / shape — simplified for activity bar (monochrome) -->
+  <!-- Rocket tip -->
+  <path d="M8 1.5 C6.5 1.5 5 4 5 7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+  <path d="M8 1.5 C9.5 1.5 11 4 11 7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+  <!-- Rocket body bottom -->
+  <path d="M5 7 L5 9 Q8 10.5 11 9 L11 7" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" fill="none"/>
+  <!-- Left fin -->
+  <path d="M5 8 L3.5 10 L5 10" stroke="currentColor" stroke-width="1" stroke-linejoin="round" fill="none"/>
+  <!-- Right fin -->
+  <path d="M11 8 L12.5 10 L11 10" stroke="currentColor" stroke-width="1" stroke-linejoin="round" fill="none"/>
+  <!-- Engine nozzle -->
+  <path d="M6.5 10 L6.5 11.5 Q8 12 9.5 11.5 L9.5 10" stroke="currentColor" stroke-width="1" fill="none"/>
+  <!-- Window/porthole -->
+  <circle cx="8" cy="6.5" r="1" stroke="currentColor" stroke-width="1" fill="none"/>
+  <!-- Flame -->
+  <path d="M7.2 12 Q8 14.5 8.8 12" stroke="currentColor" stroke-width="1" stroke-linecap="round" fill="none" opacity="0.7"/>
+</svg>
