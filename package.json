@@ -54,7 +54,7 @@
         {
           "id": "antigravity-sidebar",
           "title": "Antigravity CLI",
-          "icon": "resources/icon.svg"
+          "icon": "icon.png"
         }
       ]
     },
