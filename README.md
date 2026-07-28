@@ -1,62 +1,333 @@
-# Antigravity CLI
+# Antigravity CLI — VS Code Extension
 
-A VS Code extension that opens the [Antigravity CLI](https://antigravity.google) (`agy`) in a dedicated terminal — bringing AI-powered coding assistance directly into your editor, just like Claude Code, but powered by Antigravity.
+> Open the **Antigravity CLI** (`agy`) directly inside VS Code — on the **right side panel**, just like Claude Code and Codex.
+
+![Extension Icon](icon.png)
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+  - [Install from VSIX (Recommended)](#install-from-vsix-recommended)
+  - [Install from Source](#install-from-source)
+- [Building from Source](#building-from-source)
+- [Running & Debugging](#running--debugging)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Project Structure](#project-structure)
+- [Contributing](#contributing)
+
+---
+
+## Overview
+
+**Antigravity CLI** is a VS Code extension that integrates the `agy` (Antigravity CLI) AI coding assistant into your editor environment. Instead of switching to a separate terminal window, `agy` opens as a **right-side editor panel** — keeping your code visible on the left and the AI assistant on the right.
+
+This extension mirrors the UX of Claude Code and Codex extensions, but is purpose-built for the [Antigravity CLI](https://antigravity.google).
+
+---
 
 ## Features
 
-- 🚀 **One-click launch** — Open `agy` in a dedicated terminal from the Activity Bar, Status Bar, or Command Palette
-- ⌨️ **Keyboard shortcut** — `Cmd+Shift+A` (Mac) / `Ctrl+Shift+A` (Windows/Linux)
-- 🔁 **Smart terminal reuse** — Re-focuses an existing AGY terminal instead of creating a duplicate
-- 🔄 **Restart/Stop** — Full lifecycle management via Command Palette
-- 📌 **Status Bar** — Always-visible AGY indicator at the bottom of your editor
-- ⚙️ **Configurable** — Set a custom executable path and default arguments
+| Feature | Description |
+|---|---|
+| 🎯 **Activity Bar Icon** | Antigravity icon in the left sidebar — click to open the welcome panel |
+| 🖥️ **Right-Side Terminal** | `agy` opens as an editor tab on the right (not the bottom panel) |
+| ⚡ **Top-Right Button** | Icon button in every editor's top-right corner for instant access |
+| 📌 **Status Bar Item** | `AGY` indicator at the bottom-left — always visible, click to open |
+| ⌨️ **Keyboard Shortcut** | `Cmd+Shift+A` (Mac) / `Ctrl+Shift+A` (Windows/Linux) |
+| 🔍 **Command Palette** | Full command palette support for Open / Restart / Stop |
+| 🔁 **Smart Reuse** | Focuses existing terminal instead of opening duplicates |
+| ✅ **Auto-Close** | Terminal closes automatically when you run `/exit` in `agy` |
+| ⚙️ **Configurable** | Set a custom `agy` path and default launch arguments |
+
+---
 
 ## Requirements
 
-- `agy` must be installed and available in your `PATH` (or configure the path in settings)
-- Install Antigravity CLI: follow the [official docs](https://antigravity.google/docs)
+Before installing the extension, make sure you have:
+
+- **VS Code** `v1.85.0` or higher
+- **Node.js** `v18+` and **npm** (only needed if building from source)
+- **Antigravity CLI (`agy`)** installed and available in your `PATH`
+
+### Verify `agy` is installed
+
+```bash
+agy --version
+```
+
+If `agy` is not found, install it from the [official Antigravity docs](https://antigravity.google/docs).
+
+---
+
+## Installation
+
+### Install from VSIX (Recommended)
+
+This is the quickest way to install the extension without building from source.
+
+**Step 1 — Download the VSIX**
+
+Download `antigravity-cli-0.0.1.vsix` from the [GitHub Releases](https://github.com/Nuwanthapasindu/antigravity-cli-vs-code-extantion/releases) page, or clone the repo and use the prebuilt file.
+
+**Step 2 — Install via VS Code UI**
+
+1. Open VS Code
+2. Press `Cmd+Shift+P` (Mac) / `Ctrl+Shift+P` (Windows/Linux)
+3. Type `Extensions: Install from VSIX...` and press Enter
+4. Select the downloaded `.vsix` file
+
+**Or install via the terminal:**
+
+```bash
+code --install-extension antigravity-cli-0.0.1.vsix
+```
+
+**Step 3 — Reload VS Code**
+
+```
+Cmd+Shift+P → Developer: Reload Window
+```
+
+The Antigravity icon will appear in the Activity Bar. ✅
+
+---
+
+### Install from Source
+
+If you want to build and install the latest version directly from the source code:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/Nuwanthapasindu/antigravity-cli-vs-code-extantion.git
+cd antigravity-cli-vs-code-extantion
+
+# 2. Install dependencies
+npm install
+
+# 3. Compile TypeScript
+npm run compile
+
+# 4. Package into a VSIX file
+npm run package
+
+# 5. Install the VSIX into VS Code
+code --install-extension antigravity-cli-0.0.1.vsix
+
+# 6. Reload VS Code
+# Cmd+Shift+P → Developer: Reload Window
+```
+
+---
+
+## Building from Source
+
+### Prerequisites
+
+```bash
+# Check Node.js version (v18+ required)
+node --version
+
+# Check npm version
+npm --version
+```
+
+### Step-by-Step Build
+
+**1. Clone the repository**
+
+```bash
+git clone https://github.com/Nuwanthapasindu/antigravity-cli-vs-code-extantion.git
+cd antigravity-cli-vs-code-extantion
+```
+
+**2. Install dependencies**
+
+```bash
+npm install
+```
+
+This installs all `devDependencies` including TypeScript, `@types/vscode`, and `@vscode/vsce`.
+
+**3. Compile TypeScript**
+
+```bash
+npm run compile
+```
+
+This compiles all `.ts` files from `src/` into `out/` using the `tsconfig.json` configuration.
+
+Expected output — four compiled files in `out/`:
+```
+out/
+├── extension.js
+├── statusBarManager.js
+├── terminalManager.js
+└── welcomeViewProvider.js
+```
+
+**4. Package the extension**
+
+```bash
+npm run package
+```
+
+This runs `vsce package` and produces `antigravity-cli-0.0.1.vsix`.
+
+> **Note:** The VSIX file contains only the compiled `out/` files, `resources/`, `icon.png`, `package.json`, and `README.md`. Source files and `node_modules` are excluded via `.vscodeignore`.
+
+---
+
+## Running & Debugging
+
+The fastest way to test your changes is to use the **Extension Development Host** — a sandboxed VS Code instance that runs your extension live.
+
+### Launch with F5
+
+1. Open the project folder in VS Code:
+   ```bash
+   code /path/to/antigravity-cli-vs-code-extantion
+   ```
+
+2. Make sure you have compiled the code at least once:
+   ```bash
+   npm run compile
+   ```
+
+3. Press **`F5`** (or go to `Run → Start Debugging`)
+
+VS Code will:
+- Start a TypeScript watch build (`npm run watch`)
+- Launch a new **Extension Development Host** window
+- Load your extension automatically in that window
+
+### Watch Mode (Auto-recompile)
+
+To automatically recompile on every file save:
+
+```bash
+npm run watch
+```
+
+While watch mode is running, press `F5` to launch the host. Changes you save will recompile instantly — just run `Developer: Reload Window` in the host to pick them up.
+
+### Debugging Tips
+
+- Set **breakpoints** in any `src/*.ts` file — they work directly in the host via source maps
+- Use the **Debug Console** (`Cmd+Shift+Y`) in the main VS Code window to view `console.log` output from your extension
+- Open the **Output panel** (`Cmd+Shift+U`) and select `Extension Host` to see extension logs
+
+---
 
 ## Usage
 
-| Action | Method |
+Once installed and reloaded, use any of these methods to open the `agy` terminal:
+
+| Method | Action |
 |---|---|
-| Open AGY terminal | Click **🚀 AGY** in the status bar |
-| Open AGY terminal | Click the rocket icon in the Activity Bar → **Open AGY Terminal** |
-| Open AGY terminal | `Cmd+Shift+A` (Mac) / `Ctrl+Shift+A` (Windows/Linux) |
-| Open AGY terminal | Command Palette → `Antigravity CLI: Open Terminal` |
-| Restart terminal | Command Palette → `Antigravity CLI: Restart Terminal` |
-| Stop terminal | Command Palette → `Antigravity CLI: Stop Terminal` |
+| **Activity Bar** | Click the Antigravity icon in the left sidebar → click **Open AGY Terminal** |
+| **Top-Right Button** | Click the Antigravity icon in the top-right corner of any editor tab |
+| **Status Bar** | Click **AGY** at the bottom-left of VS Code |
+| **Keyboard Shortcut** | `Cmd+Shift+A` (Mac) / `Ctrl+Shift+A` (Windows/Linux) |
+| **Command Palette** | `Cmd+Shift+P` → `Antigravity CLI: Open Terminal` |
 
-## Extension Settings
+### Other Commands (Command Palette)
 
-| Setting | Default | Description |
-|---|---|---|
-| `antigravity.executable` | `"agy"` | Path to the `agy` binary |
-| `antigravity.defaultArgs` | `[]` | Arguments passed to `agy` on every launch |
+```
+Antigravity CLI: Open Terminal     → Opens or focuses the AGY terminal
+Antigravity CLI: Restart Terminal  → Kills and restarts the AGY terminal
+Antigravity CLI: Stop Terminal     → Closes the AGY terminal
+```
 
-### Example: custom path
+### Exiting
+
+Type `/exit` inside `agy` — the terminal panel will close automatically.
+
+---
+
+## Configuration
+
+Open VS Code Settings (`Cmd+,`) and search for `antigravity` to configure:
+
+| Setting | Type | Default | Description |
+|---|---|---|---|
+| `antigravity.executable` | `string` | `"agy"` | Path to the `agy` binary |
+| `antigravity.defaultArgs` | `string[]` | `[]` | Arguments passed to `agy` on every launch |
+
+### Example: Custom executable path
+
+If `agy` is not in your `PATH`, set the full path:
 
 ```json
+// settings.json
 {
-  "antigravity.executable": "/Users/you/.local/bin/agy",
+  "antigravity.executable": "/Users/yourname/.local/bin/agy",
   "antigravity.defaultArgs": []
 }
 ```
 
-## Development
+---
 
-```bash
-# Install dependencies
-npm install
+## Project Structure
 
-# Compile TypeScript
-npm run compile
-
-# Watch mode (used by F5 debug)
-npm run watch
-
-# Package as .vsix
-npm run package
+```
+antigravity-cli-vs-code-extantion/
+│
+├── src/                          ← TypeScript source files
+│   ├── extension.ts              ← Entry point (activate / deactivate)
+│   ├── terminalManager.ts        ← Terminal lifecycle management
+│   ├── statusBarManager.ts       ← Status bar item (idle / running states)
+│   └── welcomeViewProvider.ts    ← Sidebar webview panel HTML
+│
+├── out/                          ← Compiled JavaScript (auto-generated)
+│   ├── extension.js
+│   ├── terminalManager.js
+│   ├── statusBarManager.js
+│   └── welcomeViewProvider.js
+│
+├── resources/
+│   └── icon.svg                  ← Fallback SVG icon
+│
+├── .vscode/
+│   ├── launch.json               ← F5 debug configuration
+│   └── tasks.json                ← TypeScript watch build task
+│
+├── icon.png                      ← Extension icon (activity bar, terminal tab, marketplace)
+├── package.json                  ← Extension manifest (commands, keybindings, menus)
+├── tsconfig.json                 ← TypeScript compiler configuration
+├── .eslintrc.json                ← ESLint rules
+├── .vscodeignore                 ← Files excluded from the VSIX package
+├── .gitignore
+└── README.md
 ```
 
-Press **F5** in VS Code to launch the Extension Development Host.
+---
+
+## Contributing
+
+1. Fork the repository
+2. Clone your fork:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/antigravity-cli-vs-code-extantion.git
+   ```
+3. Create a feature branch:
+   ```bash
+   git checkout -b feat/your-feature-name
+   ```
+4. Make changes, compile, and test with `F5`
+5. Commit with a descriptive message:
+   ```bash
+   git commit -m "feat: describe your change"
+   ```
+6. Push and open a Pull Request
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE) for details.
