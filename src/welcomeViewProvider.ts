@@ -7,8 +7,8 @@ export class WelcomeViewProvider implements vscode.WebviewViewProvider {
 
     resolveWebviewView(
         webviewView: vscode.WebviewView,
-        _context: vscode.WebviewViewResolveContext,
-        _token: vscode.CancellationToken
+        // _context: vscode.WebviewViewResolveContext,
+        // _token: vscode.CancellationToken
     ): void {
         webviewView.webview.options = {
             enableScripts: true,
