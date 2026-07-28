@@ -2,6 +2,9 @@
 
 > Open the **Antigravity CLI** (`agy`) directly inside VS Code — on the **right side panel**, just like Claude Code and Codex.
 
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/nuwanthapasindu.antigravity-cli?label=VS%20Code%20Marketplace&logo=visual-studio-code&logoColor=white&color=0078d7)](https://marketplace.visualstudio.com/items?itemName=nuwanthapasindu.antigravity-cli)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/nuwanthapasindu.antigravity-cli?color=brightgreen)](https://marketplace.visualstudio.com/items?itemName=nuwanthapasindu.antigravity-cli)
+
 ![Extension Icon](icon.png)
 
 ---
@@ -12,7 +15,8 @@
 - [Features](#features)
 - [Requirements](#requirements)
 - [Installation](#installation)
-  - [Install from VSIX (Recommended)](#install-from-vsix-recommended)
+  - [Install from VS Code Marketplace (Easiest)](#install-from-vs-code-marketplace-easiest)
+  - [Install from VSIX](#install-from-vsix)
   - [Install from Source](#install-from-source)
 - [Building from Source](#building-from-source)
 - [Running & Debugging](#running--debugging)
@@ -67,13 +71,19 @@ If `agy` is not found, install it from the [official Antigravity docs](https://a
 
 ## Installation
 
-### Install from VSIX (Recommended)
+### Install from VS Code Marketplace (Easiest)
 
-This is the quickest way to install the extension without building from source.
+The extension is **published on the VS Code Marketplace** — install it in one click:
 
-**Step 1 — Download the VSIX**
+🔗 **[Install Antigravity CLI on VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=nuwanthapasindu.antigravity-cli)**
 
-Download `antigravity-cli-0.0.1.vsix` from the [GitHub Releases](https://github.com/Nuwanthapasindu/antigravity-cli-vs-code-extantion/releases) page, or clone the repo and use the prebuilt file.
+Or search for **`Antigravity CLI`** in the VS Code Extensions panel (`Cmd+Shift+X`).
+
+---
+
+### Install from VSIX
+
+If you prefer to install manually from a `.vsix` file:
 
 **Step 2 — Install via VS Code UI**
 
