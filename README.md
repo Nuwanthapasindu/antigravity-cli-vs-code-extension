@@ -114,8 +114,8 @@ If you want to build and install the latest version directly from the source cod
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/Nuwanthapasindu/antigravity-cli-vs-code-extantion.git
-cd antigravity-cli-vs-code-extantion
+git clone https://github.com/Nuwanthapasindu/antigravity-cli-vs-code-extension.git
+cd antigravity-cli-vs-code-extension
 
 # 2. Install dependencies
 npm install
@@ -152,8 +152,8 @@ npm --version
 **1. Clone the repository**
 
 ```bash
-git clone https://github.com/Nuwanthapasindu/antigravity-cli-vs-code-extantion.git
-cd antigravity-cli-vs-code-extantion
+git clone https://github.com/Nuwanthapasindu/antigravity-cli-vs-code-extension.git
+cd antigravity-cli-vs-code-extension
 ```
 
 **2. Install dependencies**
@@ -201,7 +201,7 @@ The fastest way to test your changes is to use the **Extension Development Host*
 
 1. Open the project folder in VS Code:
    ```bash
-   code /path/to/antigravity-cli-vs-code-extantion
+   code /path/to/antigravity-cli-vs-code-extension
    ```
 
 2. Make sure you have compiled the code at least once:
@@ -286,7 +286,7 @@ If `agy` is not in your `PATH`, set the full path:
 ## Project Structure
 
 ```
-antigravity-cli-vs-code-extantion/
+antigravity-cli-vs-code-extension/
 │
 ├── src/                          ← TypeScript source files
 │   ├── extension.ts              ← Entry point (activate / deactivate)
@@ -323,7 +323,7 @@ antigravity-cli-vs-code-extantion/
 1. Fork the repository
 2. Clone your fork:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/antigravity-cli-vs-code-extantion.git
+   git clone https://github.com/YOUR_USERNAME/antigravity-cli-vs-code-extension.git
    ```
 3. Create a feature branch:
    ```bash
