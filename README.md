@@ -52,6 +52,9 @@ This extension mirrors the UX of Claude Code and Codex extensions, but is purpos
 ## What's New in v0.0.2
 
 - **Native Drag and Drop Support:** You can seamlessly add files to your CLI context by dragging them directly from the VS Code Explorer into the active Antigravity terminal. **Note: You must hold the `Shift` key while dropping the file to paste the absolute path.**
+
+  ![Hold Shift Key to Drop Files](resources/hold-shift-key.gif)
+
 - **Dynamic Sidebar UI:** The Welcome View sidebar now dynamically syncs its description and version number directly from the extension metadata.
 
 ---
