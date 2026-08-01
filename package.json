@@ -1,7 +1,7 @@
 {
   "name": "antigravity-cli",
   "displayName": "Antigravity CLI",
-  "description": "The official VS Code extension for Antigravity CLI. Your AI-powered coding assistant natively integrated into your editor with full workspace context.",
+  "description": "Open Antigravity CLI (agy) in VS Code terminal — your AI-powered coding assistant",
   "version": "0.0.2",
   "publisher": "nuwanthapasindu",
   "icon": "icon.png",
