@@ -55,7 +55,6 @@ This extension mirrors the UX of Claude Code and Codex extensions, but is purpos
 
   ![Hold Shift Key to Drop Files](resources/hold-shift-key.gif)
 
-- **Dynamic Sidebar UI:** The Welcome View sidebar now dynamically syncs its description and version number directly from the extension metadata.
 
 ---
 
