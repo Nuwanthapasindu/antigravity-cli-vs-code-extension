@@ -2,12 +2,12 @@
   "name": "antigravity-cli",
   "displayName": "Antigravity CLI",
   "description": "Open Antigravity CLI (agy) in VS Code terminal — your AI-powered coding assistant",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "nuwanthapasindu",
   "icon": "icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Nuwanthapasindu/antigravity-cli-vs-code-extantion"
+    "url": "https://github.com/Nuwanthapasindu/antigravity-cli-vs-code-extension"
   },
   "engines": {
     "vscode": "^1.85.0"
