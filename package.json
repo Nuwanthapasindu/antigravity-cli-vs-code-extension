@@ -5,6 +5,10 @@
   "version": "0.0.1",
   "publisher": "nuwanthapasindu",
   "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Nuwanthapasindu/antigravity-cli-vs-code-extantion"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
