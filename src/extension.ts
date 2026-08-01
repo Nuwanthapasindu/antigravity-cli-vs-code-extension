@@ -4,9 +4,12 @@ import { StatusBarManager } from './statusBarManager';
 import { WelcomeViewProvider } from './welcomeViewProvider';
 
 export function activate(context: vscode.ExtensionContext): void {
+    const version = context.extension.packageJSON.version;
+    const description = context.extension.packageJSON.description;
+
     const terminalManager = new TerminalManager(context.extensionUri);
     const statusBarManager = new StatusBarManager();
-    const welcomeViewProvider = new WelcomeViewProvider(context.extensionUri);
+    const welcomeViewProvider = new WelcomeViewProvider(context.extensionUri, version, description);
 
     // ── Commands ─────────────────────────────────────────────────────────────
     context.subscriptions.push(

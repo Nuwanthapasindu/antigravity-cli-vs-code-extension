@@ -3,7 +3,11 @@ import * as vscode from 'vscode';
 export class WelcomeViewProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'antigravity.welcomeView';
 
-    constructor(private readonly extensionUri: vscode.Uri) {}
+    constructor(
+        private readonly extensionUri: vscode.Uri,
+        private readonly version: string,
+        private readonly description: string
+    ) {}
 
     resolveWebviewView(
         webviewView: vscode.WebviewView,
@@ -212,7 +216,7 @@ export class WelcomeViewProvider implements vscode.WebviewViewProvider {
     <div class="header">
         <div class="logo">🚀</div>
         <span class="title">Antigravity CLI</span>
-        <span class="subtitle">AI-powered coding assistant<br>in your terminal</span>
+        <span class="subtitle">${this.description}</span>
     </div>
 
     <!-- Primary actions -->
@@ -245,6 +249,13 @@ export class WelcomeViewProvider implements vscode.WebviewViewProvider {
         Launches <strong>agy</strong> in a dedicated terminal in your current workspace directory.
     </div>
 
+    <hr class="divider">
+
+    <!-- What's New -->
+    <div class="info-section" style="border-left-color: var(--vscode-terminal-ansiGreen, #4CAF50);">
+        <strong>✨ What's New:</strong> You can now drag and drop files directly into the terminal editor to instantly add them to your context! <em>(Tip: hold Shift while dropping to paste the path).</em>
+    </div>
+
     <!-- Settings -->
     <div style="font-size:11px; color: var(--vscode-descriptionForeground);">
         Executable path or args? 
@@ -253,7 +264,7 @@ export class WelcomeViewProvider implements vscode.WebviewViewProvider {
         </button>
     </div>
 
-    <div class="footer">Antigravity CLI v0.0.1</div>
+    <div class="footer">Antigravity CLI v${this.version}</div>
 
     <script>
         // eslint-disable-next-line no-undef

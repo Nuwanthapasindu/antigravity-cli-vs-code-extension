@@ -6,3 +6,5 @@ tsconfig.json
 **/*.map
 node_modules/**
 *.vsix
+.agents/**
+graphify-out/**
