@@ -39,15 +39,20 @@ This extension mirrors the UX of Claude Code and Codex extensions, but is purpos
 
 | Feature | Description |
 |---|---|
-| 🎯 **Activity Bar Icon** | Antigravity icon in the left sidebar — click to open the welcome panel |
-| 🖥️ **Right-Side Terminal** | `agy` opens as an editor tab on the right (not the bottom panel) |
-| ⚡ **Top-Right Button** | Icon button in every editor's top-right corner for instant access |
-| 📌 **Status Bar Item** | `AGY` indicator at the bottom-left — always visible, click to open |
-| ⌨️ **Keyboard Shortcut** | `Cmd+Shift+A` (Mac) / `Ctrl+Shift+A` (Windows/Linux) |
-| 🔍 **Command Palette** | Full command palette support for Open / Restart / Stop |
-| 🔁 **Smart Reuse** | Focuses existing terminal instead of opening duplicates |
-| ✅ **Auto-Close** | Terminal closes automatically when you run `/exit` in `agy` |
-| ⚙️ **Configurable** | Set a custom `agy` path and default launch arguments |
+| **Activity Bar Icon** | Antigravity icon in the left sidebar — click to open the welcome panel |
+| **Right-Side Terminal** | `agy` opens as an editor tab on the right (not the bottom panel) |
+| **Top-Right Button** | Icon button in every editor's top-right corner for instant access |
+| **Status Bar Item** | `AGY` indicator at the bottom-left — always visible, click to open |
+| **Keyboard Shortcut** | `Cmd+Shift+A` (Mac) / `Ctrl+Shift+A` (Windows/Linux) |
+| **Command Palette** | Full command palette support for Open / Restart / Stop |
+| **Smart Reuse** | Focuses existing terminal instead of opening duplicates |
+| **Auto-Close** | Terminal closes automatically when you run `/exit` in `agy` |
+| **Configurable** | Set a custom `agy` path and default launch arguments |
+
+## What's New in v0.0.2
+
+- **Native Drag and Drop Support:** You can seamlessly add files to your CLI context by dragging them directly from the VS Code Explorer into the active Antigravity terminal. **Note: You must hold the `Shift` key while dropping the file to paste the absolute path.**
+- **Dynamic Sidebar UI:** The Welcome View sidebar now dynamically syncs its description and version number directly from the extension metadata.
 
 ---
 
@@ -75,7 +80,7 @@ If `agy` is not found, install it from the [official Antigravity docs](https://a
 
 The extension is **published on the VS Code Marketplace** — install it in one click:
 
-🔗 **[Install Antigravity CLI on VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=nuwanthapasindu.antigravity-cli)**
+**[Install Antigravity CLI on VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=nuwanthapasindu.antigravity-cli)**
 
 Or search for **`Antigravity CLI`** in the VS Code Extensions panel (`Cmd+Shift+X`).
 
@@ -95,7 +100,7 @@ If you prefer to install manually from a `.vsix` file:
 **Or install via the terminal:**
 
 ```bash
-code --install-extension antigravity-cli-0.0.1.vsix
+code --install-extension antigravity-cli-0.0.2.vsix
 ```
 
 **Step 3 — Reload VS Code**
@@ -104,7 +109,7 @@ code --install-extension antigravity-cli-0.0.1.vsix
 Cmd+Shift+P → Developer: Reload Window
 ```
 
-The Antigravity icon will appear in the Activity Bar. ✅
+The Antigravity icon will appear in the Activity Bar.
 
 ---
 
@@ -127,7 +132,7 @@ npm run compile
 npm run package
 
 # 5. Install the VSIX into VS Code
-code --install-extension antigravity-cli-0.0.1.vsix
+code --install-extension antigravity-cli-0.0.2.vsix
 
 # 6. Reload VS Code
 # Cmd+Shift+P → Developer: Reload Window
@@ -187,7 +192,7 @@ out/
 npm run package
 ```
 
-This runs `vsce package` and produces `antigravity-cli-0.0.1.vsix`.
+This runs `vsce package` and produces `antigravity-cli-0.0.2.vsix`.
 
 > **Note:** The VSIX file contains only the compiled `out/` files, `resources/`, `icon.png`, `package.json`, and `README.md`. Source files and `node_modules` are excluded via `.vscodeignore`.
 
