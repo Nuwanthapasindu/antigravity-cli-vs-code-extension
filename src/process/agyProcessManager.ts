@@ -18,7 +18,7 @@ export interface ProcessStateEvents {
     onToolEvent: vscode.Event<{ toolName: string; state: 'ACTIVE' | 'DONE' | 'ERROR'; toolInfo?: ToolInfo; durationSeconds?: number }>;
     onPermissionRequest: vscode.Event<PermissionRequest>;
     onPermissionResolved: vscode.Event<{ requestId: string; approved: boolean }>;
-    onTurnComplete: vscode.Event<{ status: 'SUCCESS' | 'ERROR'; usage?: TokenUsage; durationSeconds?: number }>;
+    onTurnComplete: vscode.Event<{ status: 'SUCCESS' | 'ERROR'; usage?: TokenUsage; durationSeconds?: number; response?: string }>;
     onStatusChange: vscode.Event<'idle' | 'thinking' | 'streaming' | 'executing_tool' | 'error'>;
     onError: vscode.Event<string>;
 }
@@ -42,6 +42,7 @@ export class AgyProcessManager implements vscode.Disposable {
         status: 'SUCCESS' | 'ERROR';
         usage?: TokenUsage;
         durationSeconds?: number;
+        response?: string;
     }>();
     private readonly _onStatusChange = new vscode.EventEmitter<'idle' | 'thinking' | 'streaming' | 'executing_tool' | 'error'>();
     private readonly _onError = new vscode.EventEmitter<string>();
@@ -486,6 +487,7 @@ export class AgyProcessManager implements vscode.Disposable {
                         status: result.status,
                         usage: result.usage,
                         durationSeconds: result.duration_seconds,
+                        response: result.response,
                     });
                     this._onStatusChange.fire('idle');
                     break;

@@ -98,7 +98,7 @@ export type HostToWebviewMessage =
     | { command: 'status_change'; status: AgentStatus }
     | { command: 'turn_start'; prompt: string }
     | { command: 'text_delta'; delta: string }
-    | { command: 'turn_complete'; status: 'SUCCESS' | 'ERROR'; usage?: TokenUsage; durationSeconds?: number }
+    | { command: 'turn_complete'; status: 'SUCCESS' | 'ERROR'; usage?: TokenUsage; durationSeconds?: number; response?: string }
     | {
           command: 'tool_event';
           toolName: string;
