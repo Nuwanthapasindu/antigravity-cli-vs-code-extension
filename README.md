@@ -49,6 +49,19 @@ This extension mirrors the UX of Claude Code and Codex extensions, but is purpos
 | **Auto-Close** | Terminal closes automatically when you run `/exit` in `agy` |
 | **Configurable** | Set a custom `agy` path and default launch arguments |
 
+## Changelog & Implementation History
+
+| Date | Change | Description |
+| :--- | :--- | :--- |
+| **2026-09-13** | **Phase 7: Polish, Shortcuts & Accessibility** | Right-click editor actions (`Ask About Selected Code`, `Explain`, `Refactor`), keyboard navigation (`Escape`, `Cmd+K`/`Ctrl+K`, `Cmd+Shift+N`), ARIA accessibility roles, high-contrast support, and non-blocking asynchronous Mermaid script loading. |
+| **2026-09-13** | **Phase 6: Session History & Resumption** | **"📜 History"** drawer indexing previous conversations from `~/.gemini/antigravity-cli/brain/`, search bar filter, date groupings (`Today`, `Yesterday`, `Older`), transcript loader, and live resumption using `agy --conversation <id>`. |
+| **2026-09-13** | **Phase 5: Inline Diff Previews & Native Review** | In-chat unified diff cards with line numbers and green/red `+`/`-` line additions/deletions, collapse/expand toggle, and a **Review Diff** button opening VS Code's native `vscode.diff` split editor. |
+| **2026-09-13** | **Phase 4: Tool Activity Visualization** | Live activity accordion displaying active tools (`view_file`, `list_dir`, `grep_search`, `write_to_file`, `run_command`) with running spinners, duration timers, and exit status badges. |
+| **2026-09-13** | **Phase 3: Context & Selection Tracking** | Automatic detection of active text editor files and cursor selections; dismissible context chips; automatic prompt framing with workspace context. |
+| **2026-09-13** | **Phase 2: Core Agent UI & Streaming** | Native Codex-style composer (auto-resizing, Enter to send, Shift+Enter for newline), live Markdown streaming, syntax-highlighted code blocks with Copy buttons, and embedded Mermaid diagram visualizer. |
+| **2026-09-13** | **Phase 1: Headless Process Bridge** | Bidirectional NDJSON streaming IPC over `agy --input-format stream-json --output-format stream-json` with process lifecycle management while preserving 100% of existing terminal integration. |
+| **2026-08-01** | **v0.0.2: Native Drag and Drop** | Seamlessly add files to CLI context by dragging from VS Code Explorer into terminal while holding `Shift`. |
+
 ## What's New in v0.0.2
 
 - **Native Drag and Drop Support:** You can seamlessly add files to your CLI context by dragging them directly from the VS Code Explorer into the active Antigravity terminal. **Note: You must hold the `Shift` key while dropping the file to paste the absolute path.**
