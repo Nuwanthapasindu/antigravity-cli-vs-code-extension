@@ -42,6 +42,18 @@ export interface HistoricalMessage {
 
 export type AgentStatus = 'idle' | 'thinking' | 'streaming' | 'executing_tool' | 'error';
 
+export type ExecutionMode = 'accept-edits' | 'default' | 'plan' | 'auto-approve';
+
+export interface PermissionRequest {
+    id: string;
+    toolName: string;
+    action: string;
+    description: string;
+    command?: string;
+    targetPath?: string;
+    parameters?: Record<string, unknown>;
+}
+
 export interface WorkspaceFileInfo {
     label: string;
     relativePath: string;
@@ -55,6 +67,8 @@ export type WebviewToHostMessage =
     | { command: 'cancel_turn' }
     | { command: 'select_model'; modelId: string }
     | { command: 'select_effort'; effort: 'low' | 'medium' | 'high' }
+    | { command: 'select_mode'; mode: ExecutionMode }
+    | { command: 'permission_response'; requestId: string; approved: boolean; scope?: 'once' | 'session' }
     | { command: 'open_diff'; filePath: string }
     | { command: 'open_file'; filePath: string; line?: number }
     | { command: 'open_terminal' }
@@ -74,6 +88,7 @@ export type HostToWebviewMessage =
           models: ModelDescriptor[];
           currentModel: string;
           currentEffort: 'low' | 'medium' | 'high';
+          executionMode: ExecutionMode;
           quota?: QuotaData;
           conversationId?: string;
           activeContext?: ContextItem[];
@@ -92,6 +107,8 @@ export type HostToWebviewMessage =
           durationSeconds?: number;
       }
     | { command: 'file_changed'; change: FileChangeRecord }
+    | { command: 'permission_request'; request: PermissionRequest }
+    | { command: 'permission_resolved'; requestId: string; approved: boolean }
     | { command: 'quota_update'; quota: QuotaData }
     | { command: 'context_update'; items: ContextItem[] }
     | { command: 'search_files_result'; files: WorkspaceFileInfo[] }

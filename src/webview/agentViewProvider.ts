@@ -151,6 +151,44 @@ export class AgentViewProvider implements vscode.WebviewViewProvider {
         this.processManager.events.onError((message) => {
             this.postToAllWebviews({ command: 'error', message });
         });
+
+        this.processManager.events.onPermissionRequest((request) => {
+            this.postToAllWebviews({ command: 'permission_request', request });
+
+            const isWebviewVisible = this.webviewView?.visible || this.webviewPanel?.active;
+            if (!isWebviewVisible) {
+                const title = `Antigravity Permission: ${request.toolName}`;
+                const detail = request.command
+                    ? `$ ${request.command}`
+                    : request.targetPath
+                    ? request.targetPath
+                    : request.description;
+                vscode.window
+                    .showInformationMessage(
+                        `${title} - ${detail}`,
+                        'Allow Once',
+                        'Always Allow (Session)',
+                        'Deny'
+                    )
+                    .then((selection) => {
+                        if (selection === 'Allow Once') {
+                            this.processManager.handlePermissionResponse(request.id, true, 'once');
+                        } else if (selection === 'Always Allow (Session)') {
+                            this.processManager.handlePermissionResponse(request.id, true, 'session');
+                        } else if (selection === 'Deny') {
+                            this.processManager.handlePermissionResponse(request.id, false);
+                        }
+                    });
+            }
+        });
+
+        this.processManager.events.onPermissionResolved((event) => {
+            this.postToAllWebviews({
+                command: 'permission_resolved',
+                requestId: event.requestId,
+                approved: event.approved,
+            });
+        });
     }
 
     private registerContextListeners(): void {
@@ -193,6 +231,7 @@ export class AgentViewProvider implements vscode.WebviewViewProvider {
                     models,
                     currentModel,
                     currentEffort: this.processManager.getActiveEffort(),
+                    executionMode: this.processManager.getExecutionMode(),
                     quota,
                     conversationId: this.processManager.getConversationId(),
                     activeContext: this.contextManager.getActiveContext(),
@@ -226,6 +265,20 @@ export class AgentViewProvider implements vscode.WebviewViewProvider {
 
             case 'select_effort': {
                 this.processManager.setEffort(message.effort);
+                break;
+            }
+
+            case 'select_mode': {
+                this.processManager.setExecutionMode(message.mode);
+                break;
+            }
+
+            case 'permission_response': {
+                this.processManager.handlePermissionResponse(
+                    message.requestId,
+                    message.approved,
+                    message.scope
+                );
                 break;
             }
 
@@ -580,6 +633,59 @@ export class AgentViewProvider implements vscode.WebviewViewProvider {
             '            font-size: 11px; line-height: 1.4; color: var(--vscode-terminal-foreground, #cccccc);',
             '            margin: 0; white-space: pre-wrap; word-break: break-all;',
             '        }',
+            '        /* ── Permission Request Card ──────────────────────────────── */',
+            '        .permission-card {',
+            '            background: var(--vscode-editorWidget-background, rgba(0,0,0,0.2));',
+            '            border: 1px solid var(--vscode-editorWarning-foreground, #cca700);',
+            '            border-left: 4px solid var(--vscode-editorWarning-foreground, #cca700);',
+            '            border-radius: 6px; margin: 10px 0; padding: 12px 14px;',
+            '            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); animation: fadeIn 0.2s ease-in-out;',
+            '        }',
+            '        .permission-card.resolved-approved {',
+            '            border-color: var(--vscode-testing-iconPassed, #4ec9b0);',
+            '            border-left-color: var(--vscode-testing-iconPassed, #4ec9b0); opacity: 0.85;',
+            '        }',
+            '        .permission-card.resolved-denied {',
+            '            border-color: var(--vscode-testing-iconFailed, #f14c4c);',
+            '            border-left-color: var(--vscode-testing-iconFailed, #f14c4c); opacity: 0.7;',
+            '        }',
+            '        .permission-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }',
+            '        .permission-title-group { display: flex; align-items: center; gap: 8px; }',
+            '        .permission-badge {',
+            '            background: var(--vscode-badge-background, rgba(204, 167, 0, 0.2));',
+            '            color: var(--vscode-badge-foreground, #cca700); padding: 2px 7px; border-radius: 3px;',
+            '            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;',
+            '        }',
+            '        .permission-title { font-size: 12px; font-weight: 600; color: var(--vscode-foreground); }',
+            '        .permission-desc { font-size: 11px; color: var(--vscode-descriptionForeground); margin-bottom: 8px; line-height: 1.4; }',
+            '        .permission-detail-box {',
+            '            background: var(--vscode-textCodeBlock-background, rgba(0,0,0,0.25));',
+            '            border: 1px solid var(--vscode-widget-border, rgba(128,128,128,0.2));',
+            '            border-radius: 4px; padding: 8px 10px; font-family: var(--vscode-editor-font-family, monospace);',
+            '            font-size: 11px; margin-bottom: 10px; max-height: 120px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;',
+            '        }',
+            '        .permission-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }',
+            '        .perm-btn {',
+            '            border: none; padding: 5px 12px; border-radius: 3px; font-size: 11px;',
+            '            font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;',
+            '            transition: background 0.15s ease;',
+            '        }',
+            '        .perm-btn.allow-once { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }',
+            '        .perm-btn.allow-once:hover { background: var(--vscode-button-hoverBackground); }',
+            '        .perm-btn.always-allow {',
+            '            background: var(--vscode-button-secondaryBackground, rgba(128,128,128,0.25));',
+            '            color: var(--vscode-button-secondaryForeground, inherit);',
+            '        }',
+            '        .perm-btn.always-allow:hover { background: var(--vscode-button-secondaryHoverBackground, rgba(128,128,128,0.35)); }',
+            '        .perm-btn.deny {',
+            '            background: transparent; color: var(--vscode-terminal-ansiRed, #f14c4c);',
+            '            border: 1px solid var(--vscode-terminal-ansiRed, #f14c4c);',
+            '        }',
+            '        .perm-btn.deny:hover { background: rgba(241, 76, 76, 0.15); }',
+            '        .perm-btn:disabled { opacity: 0.5; cursor: not-allowed; }',
+            '        .permission-result-pill { font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px; }',
+            '        .permission-result-pill.approved { color: var(--vscode-testing-iconPassed, #4ec9b0); }',
+            '        .permission-result-pill.denied { color: var(--vscode-testing-iconFailed, #f14c4c); }',
             '        .context-tray {',
             '            display: flex; align-items: center; gap: 6px; padding: 6px 12px;',
             '            border-top: 1px solid var(--vscode-widget-border, rgba(128,128,128,0.15));',
@@ -844,6 +950,13 @@ export class AgentViewProvider implements vscode.WebviewViewProvider {
             '                <option value="medium">Med Effort</option>',
             '                <option value="high" selected>High Effort</option>',
             '            </select>',
+            '            <span>|</span>',
+            '            <select id="modeSelect" onchange="onModeChange(this.value)" aria-label="Select Execution Mode" title="Execution & Permission Mode">',
+            '                <option value="accept-edits" selected>⚡ Accept Edits</option>',
+            '                <option value="default">🛡️ Review All</option>',
+            '                <option value="plan">📖 Plan Only</option>',
+            '                <option value="auto-approve">🚀 Auto-Approve</option>',
+            '            </select>',
             '        </div>',
             '        <div id="quotaContainer" class="quota-indicator" aria-label="Quota Remaining">',
             '            <span id="quotaLabel">5h: 100%</span>',
@@ -861,6 +974,7 @@ export class AgentViewProvider implements vscode.WebviewViewProvider {
             '        const statusText = document.getElementById("statusText");',
             '        const modelSelect = document.getElementById("modelSelect");',
             '        const effortSelect = document.getElementById("effortSelect");',
+            '        const modeSelect = document.getElementById("modeSelect");',
             '        const contextChips = document.getElementById("contextChips");',
             '        const quotaLabel = document.getElementById("quotaLabel");',
             '        const quotaFill = document.getElementById("quotaFill");',
@@ -1150,6 +1264,7 @@ export class AgentViewProvider implements vscode.WebviewViewProvider {
             '        }',
             '        function onModelChange(val) { vscode.postMessage({ command: "select_model", modelId: val }); }',
             '        function onEffortChange(val) { vscode.postMessage({ command: "select_effort", effort: val }); }',
+            '        function onModeChange(val) { vscode.postMessage({ command: "select_mode", mode: val }); }',
             '        function escapeHtml(s) {',
             '            return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");',
             '        }',
@@ -1385,6 +1500,69 @@ export class AgentViewProvider implements vscode.WebviewViewProvider {
             '            const card = btn.closest(".terminal-card");',
             '            if (card) card.classList.toggle("collapsed");',
             '        }',
+            '        function renderPermissionCard(request) {',
+            '            if (!currentTurnWrapper) prepareAgentTurn();',
+            '            const container = currentTurnWrapper;',
+            '            let card = container.querySelector(\'.permission-card[data-request-id="\' + request.id + \'"]\');',
+            '            if (!card) {',
+            '                card = document.createElement("div");',
+            '                card.className = "permission-card";',
+            '                card.setAttribute("data-request-id", request.id);',
+            '                container.appendChild(card);',
+            '            }',
+            '            const isCommand = !!request.command;',
+            '            const badgeIcon = isCommand ? "💻 COMMAND" : "🛡️ PERMISSION";',
+            '            const detailContent = request.command',
+            '                ? request.command',
+            '                : (request.targetPath',
+            '                    ? request.targetPath',
+            '                    : (request.parameters ? JSON.stringify(request.parameters, null, 2) : ""));',
+            '',
+            '            let detailHtml = "";',
+            '            if (detailContent) {',
+            '                detailHtml = \'<div class="permission-detail-box">\' + escapeHtml(detailContent) + \'</div>\';',
+            '            }',
+            '',
+            '            const encReqId = request.id.replace(/"/g, \'&quot;\');',
+            '            card.innerHTML = \'<div class="permission-header">\' +',
+            '                \'<div class="permission-title-group">\' +',
+            '                \'<span class="permission-badge">\' + badgeIcon + \'</span>\' +',
+            '                \'<span class="permission-title">Action Approval Required</span>\' +',
+            '                \'</div>\' +',
+            '                \'</div>\' +',
+            '                \'<div class="permission-desc">\' + escapeHtml(request.description || "The agent is requesting approval to execute this action.") + \'</div>\' +',
+            '                detailHtml +',
+            '                \'<div class="permission-actions" id="perm_actions_\' + encReqId + \'">\' +',
+            '                \'<button class="perm-btn allow-once" onclick="respondPermission(\\\'\' + encReqId + \'\\\', true, \\\'once\\\')">Allow Once</button>\' +',
+            '                \'<button class="perm-btn always-allow" onclick="respondPermission(\\\'\' + encReqId + \'\\\', true, \\\'session\\\')">Always Allow (Session)</button>\' +',
+            '                \'<button class="perm-btn deny" onclick="respondPermission(\\\'\' + encReqId + \'\\\', false)">Deny</button>\' +',
+            '                \'</div>\';',
+            '            scrollToBottom();',
+            '        }',
+            '        function respondPermission(requestId, approved, scope) {',
+            '            const actionsDiv = document.getElementById("perm_actions_" + requestId);',
+            '            if (actionsDiv) {',
+            '                actionsDiv.innerHTML = \'<span style="font-size:11px; color:var(--vscode-descriptionForeground);">Submitting response...</span>\';',
+            '            }',
+            '            vscode.postMessage({',
+            '                command: "permission_response",',
+            '                requestId: requestId,',
+            '                approved: approved,',
+            '                scope: scope',
+            '            });',
+            '        }',
+            '        function resolvePermissionUI(requestId, approved) {',
+            '            const card = document.querySelector(\'.permission-card[data-request-id="\' + requestId + \'"]\');',
+            '            if (!card) return;',
+            '            card.classList.remove("resolved-approved", "resolved-denied");',
+            '            card.classList.add(approved ? "resolved-approved" : "resolved-denied");',
+            '            const actionsDiv = document.getElementById("perm_actions_" + requestId);',
+            '            if (actionsDiv) {',
+            '                const text = approved ? "✓ Approved" : "✗ Denied";',
+            '                const pillClass = approved ? "approved" : "denied";',
+            '                actionsDiv.innerHTML = \'<div class="permission-result-pill \' + pillClass + \'"><span>\' + text + \'</span></div>\';',
+            '            }',
+            '        }',
             '        function updateGitStatus(branch, dirtyCount) {',
             '            if (!gitBadge || !gitBranchName) return;',
             '            if (!branch) {',
@@ -1475,6 +1653,7 @@ export class AgentViewProvider implements vscode.WebviewViewProvider {
             '                        });',
             '                    }',
             '                    if (msg.currentEffort) effortSelect.value = msg.currentEffort;',
+            '                    if (msg.executionMode && modeSelect) modeSelect.value = msg.executionMode;',
             '                    if (msg.quota) updateQuotaUI(msg.quota);',
             '                    if (msg.conversationId) activeSessionId = msg.conversationId;',
             '                    if (msg.activeContext) updateContextUI(msg.activeContext);',
@@ -1538,6 +1717,14 @@ export class AgentViewProvider implements vscode.WebviewViewProvider {
             '                }',
             '                case "file_changed": {',
             '                    renderDiffCard(msg.change);',
+            '                    break;',
+            '                }',
+            '                case "permission_request": {',
+            '                    renderPermissionCard(msg.request);',
+            '                    break;',
+            '                }',
+            '                case "permission_resolved": {',
+            '                    resolvePermissionUI(msg.requestId, msg.approved);',
             '                    break;',
             '                }',
             '                case "turn_complete": {',

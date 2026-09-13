@@ -11,10 +11,13 @@ import {
     TokenUsage,
     ToolInfo
 } from './protocolTypes';
+import { ExecutionMode, PermissionRequest } from '../shared/messages';
 
 export interface ProcessStateEvents {
     onTextDelta: vscode.Event<string>;
     onToolEvent: vscode.Event<{ toolName: string; state: 'ACTIVE' | 'DONE' | 'ERROR'; toolInfo?: ToolInfo; durationSeconds?: number }>;
+    onPermissionRequest: vscode.Event<PermissionRequest>;
+    onPermissionResolved: vscode.Event<{ requestId: string; approved: boolean }>;
     onTurnComplete: vscode.Event<{ status: 'SUCCESS' | 'ERROR'; usage?: TokenUsage; durationSeconds?: number }>;
     onStatusChange: vscode.Event<'idle' | 'thinking' | 'streaming' | 'executing_tool' | 'error'>;
     onError: vscode.Event<string>;
@@ -33,6 +36,8 @@ export class AgyProcessManager implements vscode.Disposable {
         toolInfo?: ToolInfo;
         durationSeconds?: number;
     }>();
+    private readonly _onPermissionRequest = new vscode.EventEmitter<PermissionRequest>();
+    private readonly _onPermissionResolved = new vscode.EventEmitter<{ requestId: string; approved: boolean }>();
     private readonly _onTurnComplete = new vscode.EventEmitter<{
         status: 'SUCCESS' | 'ERROR';
         usage?: TokenUsage;
@@ -44,6 +49,8 @@ export class AgyProcessManager implements vscode.Disposable {
     public readonly events: ProcessStateEvents = {
         onTextDelta: this._onTextDelta.event,
         onToolEvent: this._onToolEvent.event,
+        onPermissionRequest: this._onPermissionRequest.event,
+        onPermissionResolved: this._onPermissionResolved.event,
         onTurnComplete: this._onTurnComplete.event,
         onStatusChange: this._onStatusChange.event,
         onError: this._onError.event,
@@ -51,8 +58,14 @@ export class AgyProcessManager implements vscode.Disposable {
 
     private currentModel: string | undefined;
     private currentEffort: 'low' | 'medium' | 'high' = 'high';
+    private executionMode: ExecutionMode = 'accept-edits';
+    private sessionApprovedTools = new Set<string>();
+    private pendingPermissions = new Map<string, PermissionRequest>();
 
-    constructor() {}
+    constructor() {
+        const config = vscode.workspace.getConfiguration('antigravity');
+        this.executionMode = config.get<ExecutionMode>('mode', 'accept-edits');
+    }
 
     /**
      * Retrieves the executable path configured in VS Code settings or defaults to 'agy'.
@@ -177,6 +190,17 @@ export class AgyProcessManager implements vscode.Disposable {
         return this.currentEffort;
     }
 
+    public getExecutionMode(): ExecutionMode {
+        return this.executionMode;
+    }
+
+    public setExecutionMode(mode: ExecutionMode): void {
+        if (this.executionMode !== mode) {
+            this.executionMode = mode;
+            this.restartSubprocess();
+        }
+    }
+
     public getConversationId(): string | undefined {
         return this.currentConversationId;
     }
@@ -197,6 +221,12 @@ export class AgyProcessManager implements vscode.Disposable {
             '--output-format',
             'stream-json',
         ];
+
+        if (this.executionMode === 'auto-approve') {
+            args.push('--dangerously-skip-permissions');
+        } else {
+            args.push('--mode', this.executionMode);
+        }
 
         if (this.currentModel) {
             args.push('--model', this.currentModel);
@@ -298,6 +328,8 @@ export class AgyProcessManager implements vscode.Disposable {
      */
     public newSession(): void {
         this.currentConversationId = undefined;
+        this.sessionApprovedTools.clear();
+        this.pendingPermissions.clear();
         this.restartSubprocess();
     }
 
@@ -307,6 +339,40 @@ export class AgyProcessManager implements vscode.Disposable {
     public resumeSession(conversationId: string): void {
         this.currentConversationId = conversationId;
         this.restartSubprocess();
+    }
+
+    /**
+     * Handles user permission response (allow once, allow session, or deny).
+     */
+    public handlePermissionResponse(
+        requestId: string,
+        approved: boolean,
+        scope?: 'once' | 'session'
+    ): void {
+        const req = this.pendingPermissions.get(requestId);
+        if (req && scope === 'session') {
+            this.sessionApprovedTools.add(req.toolName);
+            if (req.action) {
+                this.sessionApprovedTools.add(req.action);
+            }
+        }
+        this.pendingPermissions.delete(requestId);
+
+        if (this.process && !this.process.killed) {
+            const answer = approved ? 'yes' : 'no';
+            const streamMsg = JSON.stringify({
+                event: 'user',
+                message: { content: answer },
+            }) + '\n';
+            try {
+                this.process.stdin.write(streamMsg);
+                this.process.stdin.write(approved ? 'y\n' : 'n\n');
+            } catch (err) {
+                console.warn('[agy permission response write error]:', err);
+            }
+        }
+
+        this._onPermissionResolved.fire({ requestId, approved });
     }
 
     private restartSubprocess(): void {
@@ -356,6 +422,34 @@ export class AgyProcessManager implements vscode.Disposable {
                             this._onTextDelta.fire(stepUpdate.text_delta);
                         }
                     } else if (stepUpdate.step_type === 'tool') {
+                        const toolName = stepUpdate.tool_name || 'ask_permission';
+                        const isPermTool = toolName === 'ask_permission' || toolName === 'ask_custom_permission';
+                        if (isPermTool && stepUpdate.state === 'ACTIVE') {
+                            const params = stepUpdate.tool_info?.parameters || {};
+                            const command = (params.command || params.CommandLine || params.cmd) as string | undefined;
+                            const targetPath = (params.TargetFile || params.path || params.file || params.filePath) as string | undefined;
+                            const action = (command || targetPath || params.tool || params.action || '') as string;
+                            const description = (params.description || params.message || params.reason || (command ? `Run command: ${command}` : (targetPath ? `Modify file: ${targetPath}` : `Permission requested for: ${toolName}`))) as string;
+
+                            if (this.sessionApprovedTools.has(toolName) || (action && this.sessionApprovedTools.has(action))) {
+                                this.handlePermissionResponse('auto_' + Date.now(), true, 'session');
+                                return;
+                            }
+
+                            const req: PermissionRequest = {
+                                id: 'perm_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+                                toolName,
+                                action,
+                                description,
+                                command,
+                                targetPath,
+                                parameters: params,
+                            };
+                            this.pendingPermissions.set(req.id, req);
+                            this._onPermissionRequest.fire(req);
+                            return;
+                        }
+
                         if (stepUpdate.state === 'ACTIVE') {
                             this._onStatusChange.fire('executing_tool');
                         }
@@ -394,6 +488,8 @@ export class AgyProcessManager implements vscode.Disposable {
         this.readlineInterface?.close();
         this._onTextDelta.dispose();
         this._onToolEvent.dispose();
+        this._onPermissionRequest.dispose();
+        this._onPermissionResolved.dispose();
         this._onTurnComplete.dispose();
         this._onStatusChange.dispose();
         this._onError.dispose();

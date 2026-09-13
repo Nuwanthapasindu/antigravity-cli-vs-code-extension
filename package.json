@@ -152,6 +152,23 @@
           ],
           "default": "high",
           "description": "Default reasoning effort level for agent queries"
+        },
+        "antigravity.mode": {
+          "type": "string",
+          "enum": [
+            "accept-edits",
+            "default",
+            "plan",
+            "auto-approve"
+          ],
+          "enumDescriptions": [
+            "Accept Edits: Automatically approve file edits, prompt for shell commands (Default)",
+            "Review All: Review and prompt for all tool executions and file changes",
+            "Plan Only: Read-only planning and research mode, no workspace modifications",
+            "Auto-Approve: Bypass permission prompts (runs with --dangerously-skip-permissions)"
+          ],
+          "default": "accept-edits",
+          "description": "Execution mode and permission gating level for Antigravity Agent"
         }
       }
     },
