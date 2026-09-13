@@ -54,6 +54,11 @@
         }
       },
       {
+        "command": "antigravity.askAgent",
+        "title": "Antigravity: Ask About Selected Code",
+        "icon": "$(comment-discussion)"
+      },
+      {
         "command": "antigravity.explainCode",
         "title": "Antigravity: Explain Selected Code",
         "icon": "$(lightbulb)"
@@ -118,6 +123,26 @@
             "type": "string"
           },
           "description": "Default arguments to pass to agy on launch"
+        },
+        "antigravity.agent.autoScroll": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically scroll to bottom during streaming agent tokens"
+        },
+        "antigravity.agent.defaultModel": {
+          "type": "string",
+          "default": "",
+          "description": "Default model for agent queries (leave empty for auto-detection)"
+        },
+        "antigravity.agent.defaultEffort": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "default": "high",
+          "description": "Default reasoning effort level for agent queries"
         }
       }
     },
@@ -135,6 +160,11 @@
         }
       ],
       "editor/context": [
+        {
+          "command": "antigravity.askAgent",
+          "group": "antigravity@0",
+          "when": "editorHasSelection"
+        },
         {
           "command": "antigravity.explainCode",
           "group": "antigravity@1",

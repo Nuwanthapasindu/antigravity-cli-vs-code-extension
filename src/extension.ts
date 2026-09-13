@@ -61,24 +61,30 @@ export function activate(context: vscode.ExtensionContext): void {
             agentViewProvider.openAsEditorTab();
         }),
 
-        vscode.commands.registerCommand('antigravity.explainCode', () => {
-            agentViewProvider.openAsEditorTab();
-            const activeContext = contextManager.getActiveContext();
-            const prompt = contextManager.formatPromptWithContext(
-                'Explain the selected code and its purpose in the architecture.',
-                activeContext
-            );
-            processManager.sendPrompt(prompt);
+        vscode.commands.registerCommand('antigravity.askAgent', async () => {
+            const editor = vscode.window.activeTextEditor;
+            const hasSelection = editor && !editor.selection.isEmpty;
+            const input = await vscode.window.showInputBox({
+                prompt: hasSelection
+                    ? 'Ask Antigravity about the selected code...'
+                    : 'Ask Antigravity a question...',
+                placeHolder: 'e.g. How can I optimize this function?',
+            });
+            if (input && input.trim()) {
+                await agentViewProvider.sendAgentPrompt(input.trim());
+            }
         }),
 
-        vscode.commands.registerCommand('antigravity.refactorCode', () => {
-            agentViewProvider.openAsEditorTab();
-            const activeContext = contextManager.getActiveContext();
-            const prompt = contextManager.formatPromptWithContext(
-                'Refactor this code to improve clarity, performance, and best practices.',
-                activeContext
+        vscode.commands.registerCommand('antigravity.explainCode', async () => {
+            await agentViewProvider.sendAgentPrompt(
+                'Explain the selected code and its role in the overall architecture.'
             );
-            processManager.sendPrompt(prompt);
+        }),
+
+        vscode.commands.registerCommand('antigravity.refactorCode', async () => {
+            await agentViewProvider.sendAgentPrompt(
+                'Refactor this code to improve clarity, performance, and best practices.'
+            );
         })
     );
 
