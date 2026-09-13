@@ -115,4 +115,5 @@ export type HostToWebviewMessage =
     | { command: 'git_status'; branch?: string; dirtyCount?: number }
     | { command: 'session_list'; sessions: SessionMetadata[]; activeSessionId?: string }
     | { command: 'session_loaded'; sessionId: string; messages: HistoricalMessage[] }
+    | { command: 'mode_changed'; mode: ExecutionMode }
     | { command: 'error'; message: string };

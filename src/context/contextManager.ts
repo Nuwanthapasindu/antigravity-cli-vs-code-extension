@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { ContextItem, WorkspaceFileInfo } from '../shared/messages';
+import { ContextItem, ExecutionMode, WorkspaceFileInfo } from '../shared/messages';
 
 export class ContextManager implements vscode.Disposable {
     private activeContext: ContextItem[] = [];
@@ -126,15 +126,27 @@ export class ContextManager implements vscode.Disposable {
     /**
      * Formats prompt with attached context blocks
      */
-    public formatPromptWithContext(prompt: string, contextItems: ContextItem[]): string {
+    public formatPromptWithContext(
+        prompt: string,
+        contextItems: ContextItem[],
+        mode?: ExecutionMode
+    ): string {
         const trimmed = prompt.trim();
         // Slash commands must remain at the very start of the input for agy to recognize them
-        if (trimmed.startsWith('/') || !contextItems || contextItems.length === 0) {
+        if (trimmed.startsWith('/')) {
             return prompt;
         }
 
+        const modeInstruction = mode === 'plan'
+            ? '[Execution Mode: Plan Only. You are in read-only architectural planning mode. Read files and explore, but DO NOT modify workspace files or run state-changing terminal commands. Provide a detailed plan of action.]\n\n'
+            : (mode === 'accept-edits'
+                ? '[Execution Mode: Accept Edits. Automatically apply file changes, but ask for user permission before executing terminal commands.]\n\n'
+                : (mode === 'default'
+                    ? '[Execution Mode: Review All. Ask for user confirmation before executing tool actions or modifying files.]\n\n'
+                    : ''));
+
         const contextBlocks: string[] = [];
-        for (const item of contextItems) {
+        for (const item of (contextItems || [])) {
             if (item.content && item.lineRange) {
                 contextBlocks.push(
                     `[Context: File ${item.label} lines ${item.lineRange[0]}-${item.lineRange[1]}]:\n\`\`\`\n${item.content}\n\`\`\``
@@ -144,7 +156,12 @@ export class ContextManager implements vscode.Disposable {
             }
         }
 
-        return `<context>\n${contextBlocks.join('\n\n')}\n</context>\n\n${prompt}`;
+        let contextPart = '';
+        if (contextBlocks.length > 0) {
+            contextPart = `<context>\n${contextBlocks.join('\n\n')}\n</context>\n\n`;
+        }
+
+        return `${modeInstruction}${contextPart}${prompt}`;
     }
 
     public dispose(): void {

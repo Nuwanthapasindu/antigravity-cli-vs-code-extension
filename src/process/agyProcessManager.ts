@@ -197,6 +197,11 @@ export class AgyProcessManager implements vscode.Disposable {
     public setExecutionMode(mode: ExecutionMode): void {
         if (this.executionMode !== mode) {
             this.executionMode = mode;
+            try {
+                vscode.workspace.getConfiguration('antigravity').update('mode', mode, vscode.ConfigurationTarget.Global);
+            } catch {
+                // ignore
+            }
             this.restartSubprocess();
         }
     }
@@ -224,9 +229,12 @@ export class AgyProcessManager implements vscode.Disposable {
 
         if (this.executionMode === 'auto-approve') {
             args.push('--dangerously-skip-permissions');
-        } else {
-            args.push('--mode', this.executionMode);
+        } else if (this.executionMode === 'accept-edits') {
+            args.push('--mode', 'accept-edits');
+        } else if (this.executionMode === 'plan') {
+            args.push('--mode', 'plan');
         }
+        // In 'default' mode, agy runs in standard review mode without --mode flag
 
         if (this.currentModel) {
             args.push('--model', this.currentModel);
@@ -242,30 +250,34 @@ export class AgyProcessManager implements vscode.Disposable {
         }
 
         try {
-            this.process = cp.spawn(executable, args, {
+            const childProc = cp.spawn(executable, args, {
                 cwd: workspaceFolder || process.cwd(),
                 env: { ...process.env },
             });
+            this.process = childProc;
 
-            this.readlineInterface = readline.createInterface({
-                input: this.process.stdout,
+            const rl = readline.createInterface({
+                input: childProc.stdout,
                 terminal: false,
             });
+            this.readlineInterface = rl;
 
-            this.readlineInterface.on('line', (line) => {
+            rl.on('line', (line) => {
                 this.handleStreamLine(line);
             });
 
-            this.process.stderr.on('data', (data) => {
+            childProc.stderr.on('data', (data) => {
                 const text = data.toString().trim();
                 if (text && !text.includes('warning:')) {
                     console.warn('[agy stderr]:', text);
                 }
             });
 
-            this.process.on('close', () => {
-                this.process = undefined;
-                this.readlineInterface = undefined;
+            childProc.on('close', () => {
+                if (this.process === childProc) {
+                    this.process = undefined;
+                    this.readlineInterface = undefined;
+                }
                 if (this.isTurnActive) {
                     this.isTurnActive = false;
                     this._onTurnComplete.fire({ status: 'ERROR' });
@@ -273,8 +285,12 @@ export class AgyProcessManager implements vscode.Disposable {
                 }
             });
 
-            this.process.on('error', (err) => {
+            childProc.on('error', (err) => {
                 console.error('[agy process error]:', err);
+                if (this.process === childProc) {
+                    this.process = undefined;
+                    this.readlineInterface = undefined;
+                }
                 this._onError.fire(`Antigravity CLI process error: ${err.message}`);
                 this._onStatusChange.fire('error');
             });
@@ -377,14 +393,6 @@ export class AgyProcessManager implements vscode.Disposable {
 
     private restartSubprocess(): void {
         this.isTurnActive = false;
-        if (this.process) {
-            try {
-                this.process.kill('SIGTERM');
-            } catch {
-                // ignore
-            }
-            this.process = undefined;
-        }
         if (this.readlineInterface) {
             try {
                 this.readlineInterface.close();
@@ -393,7 +401,15 @@ export class AgyProcessManager implements vscode.Disposable {
             }
             this.readlineInterface = undefined;
         }
-        this.ensureProcessStarted();
+        if (this.process) {
+            const oldProc = this.process;
+            this.process = undefined;
+            try {
+                oldProc.kill('SIGTERM');
+            } catch {
+                // ignore
+            }
+        }
     }
 
     /**
