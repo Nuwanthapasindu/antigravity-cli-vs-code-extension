@@ -2,7 +2,7 @@
   "name": "antigravity-cli",
   "displayName": "Antigravity CLI",
   "description": "Open Antigravity CLI (agy) in VS Code terminal — your AI-powered coding assistant",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "nuwanthapasindu",
   "icon": "icon.png",
   "repository": {
@@ -44,6 +44,24 @@
         "command": "antigravity.stopTerminal",
         "title": "Antigravity CLI: Stop Terminal",
         "icon": "$(debug-stop)"
+      },
+      {
+        "command": "antigravity.openAgent",
+        "title": "Antigravity: Open Coding Agent",
+        "icon": {
+          "light": "icon.png",
+          "dark": "icon.png"
+        }
+      },
+      {
+        "command": "antigravity.explainCode",
+        "title": "Antigravity: Explain Selected Code",
+        "icon": "$(lightbulb)"
+      },
+      {
+        "command": "antigravity.refactorCode",
+        "title": "Antigravity: Refactor Selected Code",
+        "icon": "$(wand)"
       }
     ],
     "keybindings": [
@@ -51,6 +69,11 @@
         "command": "antigravity.openTerminal",
         "key": "ctrl+shift+a",
         "mac": "cmd+shift+a"
+      },
+      {
+        "command": "antigravity.openAgent",
+        "key": "ctrl+alt+a",
+        "mac": "cmd+alt+a"
       }
     ],
     "viewsContainers": {
@@ -101,9 +124,26 @@
     "menus": {
       "editor/title": [
         {
-          "command": "antigravity.openTerminal",
-          "group": "navigation",
+          "command": "antigravity.openAgent",
+          "group": "navigation@1",
           "when": "true"
+        },
+        {
+          "command": "antigravity.openTerminal",
+          "group": "navigation@2",
+          "when": "true"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "antigravity.explainCode",
+          "group": "antigravity@1",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "antigravity.refactorCode",
+          "group": "antigravity@2",
+          "when": "editorHasSelection"
         }
       ]
     }
@@ -116,12 +156,17 @@
     "package": "npx @vscode/vsce package"
   },
   "devDependencies": {
-    "@types/vscode": "^1.85.0",
+    "@types/diff": "^7.0.2",
     "@types/node": "^20.0.0",
-    "typescript": "^5.3.0",
-    "@vscode/vsce": "^3.0.0",
+    "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
-    "eslint": "^8.50.0"
+    "@vscode/vsce": "^3.0.0",
+    "eslint": "^8.50.0",
+    "mermaid": "^12.0.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "diff": "^9.0.0"
   }
 }

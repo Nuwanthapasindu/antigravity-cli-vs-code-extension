@@ -1,17 +1,40 @@
 import * as vscode from 'vscode';
 import { TerminalManager } from './terminalManager';
 import { StatusBarManager } from './statusBarManager';
-import { WelcomeViewProvider } from './welcomeViewProvider';
+import { AgyProcessManager } from './process/agyProcessManager';
+import { ContextManager } from './context/contextManager';
+import { DiffManager } from './diff/diffManager';
+import { AgentViewProvider } from './webview/agentViewProvider';
 
 export function activate(context: vscode.ExtensionContext): void {
     const version = context.extension.packageJSON.version;
-    const description = context.extension.packageJSON.description;
 
+    // ── Managers ─────────────────────────────────────────────────────────────
     const terminalManager = new TerminalManager(context.extensionUri);
     const statusBarManager = new StatusBarManager();
-    const welcomeViewProvider = new WelcomeViewProvider(context.extensionUri, version, description);
+    const processManager = new AgyProcessManager();
+    const contextManager = new ContextManager();
+    const diffManager = new DiffManager();
 
-    // ── Commands ─────────────────────────────────────────────────────────────
+    context.subscriptions.push(processManager, contextManager, diffManager);
+
+    // ── Agent Webview Provider (Sidebar & Editor Tab) ─────────────────────────
+    const agentViewProvider = new AgentViewProvider(
+        context.extensionUri,
+        processManager,
+        contextManager,
+        diffManager,
+        version
+    );
+
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(
+            AgentViewProvider.viewType,
+            agentViewProvider
+        )
+    );
+
+    // ── Existing Terminal Commands (Preserved 100%) ───────────────────────────
     context.subscriptions.push(
         vscode.commands.registerCommand('antigravity.openTerminal', () => {
             terminalManager.openOrFocusTerminal();
@@ -29,15 +52,34 @@ export function activate(context: vscode.ExtensionContext): void {
         })
     );
 
-    // ── Sidebar webview ───────────────────────────────────────────────────────
+    // ── New Codex-Style Agent Commands ─────────────────────────────────────────
     context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider(
-            'antigravity.welcomeView',
-            welcomeViewProvider
-        )
+        vscode.commands.registerCommand('antigravity.openAgent', () => {
+            agentViewProvider.openAsEditorTab();
+        }),
+
+        vscode.commands.registerCommand('antigravity.explainCode', () => {
+            agentViewProvider.openAsEditorTab();
+            const activeContext = contextManager.getActiveContext();
+            const prompt = contextManager.formatPromptWithContext(
+                'Explain the selected code and its purpose in the architecture.',
+                activeContext
+            );
+            processManager.sendPrompt(prompt);
+        }),
+
+        vscode.commands.registerCommand('antigravity.refactorCode', () => {
+            agentViewProvider.openAsEditorTab();
+            const activeContext = contextManager.getActiveContext();
+            const prompt = contextManager.formatPromptWithContext(
+                'Refactor this code to improve clarity, performance, and best practices.',
+                activeContext
+            );
+            processManager.sendPrompt(prompt);
+        })
     );
 
-    // ── Terminal profile provider ─────────────────────────────────────────────
+    // ── Terminal profile provider (Preserved 100%) ────────────────────────────
     context.subscriptions.push(
         vscode.window.registerTerminalProfileProvider(
             'antigravity.terminalProfile',
@@ -51,7 +93,7 @@ export function activate(context: vscode.ExtensionContext): void {
         )
     );
 
-    // ── Terminal lifecycle tracking ───────────────────────────────────────────
+    // ── Terminal lifecycle tracking (Preserved 100%) ──────────────────────────
     context.subscriptions.push(
         vscode.window.onDidCloseTerminal((terminal) => {
             if (terminalManager.isAntigravityTerminal(terminal)) {
@@ -61,10 +103,10 @@ export function activate(context: vscode.ExtensionContext): void {
         })
     );
 
-    // ── Status bar ────────────────────────────────────────────────────────────
+    // ── Status bar (Preserved 100%) ───────────────────────────────────────────
     statusBarManager.initialize(context);
 }
 
 export function deactivate(): void {
-    // VS Code handles subscription cleanup via context.subscriptions
+    // VS Code automatically cleans up context.subscriptions
 }

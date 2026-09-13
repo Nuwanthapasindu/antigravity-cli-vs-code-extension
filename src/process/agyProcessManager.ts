@@ -1,0 +1,380 @@
+import * as cp from 'child_process';
+import * as readline from 'readline';
+import * as vscode from 'vscode';
+import {
+    AgyServerEvent,
+    AgyStepUpdateEvent,
+    AgyResultEvent,
+    ModelDescriptor,
+    QuotaData,
+    StreamInputUserMessage,
+    TokenUsage,
+    ToolInfo
+} from './protocolTypes';
+
+export interface ProcessStateEvents {
+    onTextDelta: vscode.Event<string>;
+    onToolEvent: vscode.Event<{ toolName: string; state: 'ACTIVE' | 'DONE' | 'ERROR'; toolInfo?: ToolInfo; durationSeconds?: number }>;
+    onTurnComplete: vscode.Event<{ status: 'SUCCESS' | 'ERROR'; usage?: TokenUsage; durationSeconds?: number }>;
+    onStatusChange: vscode.Event<'idle' | 'thinking' | 'streaming' | 'executing_tool' | 'error'>;
+    onError: vscode.Event<string>;
+}
+
+export class AgyProcessManager implements vscode.Disposable {
+    private process: cp.ChildProcessWithoutNullStreams | undefined;
+    private readlineInterface: readline.Interface | undefined;
+    private isTurnActive = false;
+    private currentConversationId: string | undefined;
+
+    private readonly _onTextDelta = new vscode.EventEmitter<string>();
+    private readonly _onToolEvent = new vscode.EventEmitter<{
+        toolName: string;
+        state: 'ACTIVE' | 'DONE' | 'ERROR';
+        toolInfo?: ToolInfo;
+        durationSeconds?: number;
+    }>();
+    private readonly _onTurnComplete = new vscode.EventEmitter<{
+        status: 'SUCCESS' | 'ERROR';
+        usage?: TokenUsage;
+        durationSeconds?: number;
+    }>();
+    private readonly _onStatusChange = new vscode.EventEmitter<'idle' | 'thinking' | 'streaming' | 'executing_tool' | 'error'>();
+    private readonly _onError = new vscode.EventEmitter<string>();
+
+    public readonly events: ProcessStateEvents = {
+        onTextDelta: this._onTextDelta.event,
+        onToolEvent: this._onToolEvent.event,
+        onTurnComplete: this._onTurnComplete.event,
+        onStatusChange: this._onStatusChange.event,
+        onError: this._onError.event,
+    };
+
+    private currentModel: string | undefined;
+    private currentEffort: 'low' | 'medium' | 'high' = 'high';
+
+    constructor() {}
+
+    /**
+     * Retrieves the executable path configured in VS Code settings or defaults to 'agy'.
+     */
+    public getExecutablePath(): string {
+        const config = vscode.workspace.getConfiguration('antigravity');
+        return config.get<string>('executable', 'agy');
+    }
+
+    /**
+     * Discovers all available models dynamically from the CLI.
+     */
+    public async fetchAvailableModels(): Promise<ModelDescriptor[]> {
+        return new Promise((resolve) => {
+            const executable = this.getExecutablePath();
+            cp.exec(`${executable} models`, (error, stdout) => {
+                if (error || !stdout) {
+                    // Fallback to sensible defaults if CLI is unreachable
+                    resolve([
+                        { id: 'gemini-3.8-flash-high', label: 'Gemini 3.8 Flash (High)' },
+                        { id: 'gemini-3.1-pro-high', label: 'Gemini 3.1 Pro (High)' },
+                        { id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6 (Thinking)' },
+                        { id: 'claude-opus-4-6-thinking', label: 'Claude Opus 4.6 (Thinking)' },
+                    ]);
+                    return;
+                }
+
+                const models: ModelDescriptor[] = [];
+                const lines = stdout.split('\n');
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (!trimmed || trimmed.startsWith('Fetching')) {
+                        continue;
+                    }
+                    const parts = trimmed.split('\t');
+                    if (parts.length >= 2) {
+                        models.push({ id: parts[0].trim(), label: parts[1].trim() });
+                    } else if (parts.length === 1 && parts[0].length > 0) {
+                        models.push({ id: parts[0].trim(), label: parts[0].trim() });
+                    }
+                }
+                resolve(models.length > 0 ? models : [
+                    { id: 'gemini-3.8-flash-high', label: 'Gemini 3.8 Flash (High)' }
+                ]);
+            });
+        });
+    }
+
+    /**
+     * Fetches current model selection from the CLI.
+     */
+    public async fetchCurrentModel(): Promise<string> {
+        return new Promise((resolve) => {
+            const executable = this.getExecutablePath();
+            cp.exec(`${executable} -p "/model" --output-format json`, (error, stdout) => {
+                if (!error && stdout) {
+                    try {
+                        const parsed = JSON.parse(stdout);
+                        if (parsed.command?.data?.id) {
+                            this.currentModel = parsed.command.data.id;
+                            resolve(parsed.command.data.id);
+                            return;
+                        }
+                    } catch {
+                        // ignore
+                    }
+                }
+                resolve(this.currentModel || 'gemini-3.8-flash-high');
+            });
+        });
+    }
+
+    /**
+     * Fetches real-time quota data from the CLI.
+     */
+    public async fetchQuota(): Promise<QuotaData | undefined> {
+        return new Promise((resolve) => {
+            const executable = this.getExecutablePath();
+            cp.exec(`${executable} -p "/quota" --output-format json`, (error, stdout) => {
+                if (!error && stdout) {
+                    try {
+                        const parsed = JSON.parse(stdout);
+                        if (parsed.command?.data?.groups) {
+                            resolve(parsed.command.data as QuotaData);
+                            return;
+                        }
+                    } catch {
+                        // ignore
+                    }
+                }
+                resolve(undefined);
+            });
+        });
+    }
+
+    /**
+     * Sets the active model for future sessions.
+     */
+    public setModel(modelId: string): void {
+        if (this.currentModel !== modelId) {
+            this.currentModel = modelId;
+            // Restart process with new model flag if currently running
+            this.restartSubprocess();
+        }
+    }
+
+    /**
+     * Sets the reasoning effort level.
+     */
+    public setEffort(effort: 'low' | 'medium' | 'high'): void {
+        if (this.currentEffort !== effort) {
+            this.currentEffort = effort;
+            this.restartSubprocess();
+        }
+    }
+
+    public getActiveModel(): string {
+        return this.currentModel || 'gemini-3.8-flash-high';
+    }
+
+    public getActiveEffort(): 'low' | 'medium' | 'high' {
+        return this.currentEffort;
+    }
+
+    public getConversationId(): string | undefined {
+        return this.currentConversationId;
+    }
+
+    /**
+     * Ensures the background stream-json process is running and ready for turns.
+     */
+    public async ensureProcessStarted(): Promise<void> {
+        if (this.process && !this.process.killed) {
+            return;
+        }
+
+        const executable = this.getExecutablePath();
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+        const args: string[] = [
+            '--input-format',
+            'stream-json',
+            '--output-format',
+            'stream-json',
+        ];
+
+        if (this.currentModel) {
+            args.push('--model', this.currentModel);
+        }
+        if (this.currentEffort) {
+            args.push('--effort', this.currentEffort);
+        }
+        if (workspaceFolder) {
+            args.push('--add-dir', workspaceFolder);
+        }
+        if (this.currentConversationId) {
+            args.push('--conversation', this.currentConversationId);
+        }
+
+        try {
+            this.process = cp.spawn(executable, args, {
+                cwd: workspaceFolder || process.cwd(),
+                env: { ...process.env },
+            });
+
+            this.readlineInterface = readline.createInterface({
+                input: this.process.stdout,
+                terminal: false,
+            });
+
+            this.readlineInterface.on('line', (line) => {
+                this.handleStreamLine(line);
+            });
+
+            this.process.stderr.on('data', (data) => {
+                const text = data.toString().trim();
+                if (text && !text.includes('warning:')) {
+                    console.warn('[agy stderr]:', text);
+                }
+            });
+
+            this.process.on('close', () => {
+                this.process = undefined;
+                this.readlineInterface = undefined;
+                if (this.isTurnActive) {
+                    this.isTurnActive = false;
+                    this._onTurnComplete.fire({ status: 'ERROR' });
+                    this._onStatusChange.fire('idle');
+                }
+            });
+
+            this.process.on('error', (err) => {
+                console.error('[agy process error]:', err);
+                this._onError.fire(`Antigravity CLI process error: ${err.message}`);
+                this._onStatusChange.fire('error');
+            });
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            this._onError.fire(`Failed to start Antigravity CLI: ${msg}`);
+            this._onStatusChange.fire('error');
+        }
+    }
+
+    /**
+     * Sends a user prompt turn to the running stream-json process.
+     */
+    public async sendPrompt(prompt: string): Promise<void> {
+        await this.ensureProcessStarted();
+
+        if (!this.process || this.process.killed) {
+            this._onError.fire('Antigravity CLI is not running.');
+            return;
+        }
+
+        this.isTurnActive = true;
+        this._onStatusChange.fire('thinking');
+
+        const message: StreamInputUserMessage = {
+            event: 'user',
+            message: {
+                content: prompt,
+            },
+        };
+
+        const jsonLine = JSON.stringify(message) + '\n';
+        this.process.stdin.write(jsonLine);
+    }
+
+    /**
+     * Cancels the current turn by terminating and restarting the process.
+     */
+    public cancelTurn(): void {
+        if (this.process) {
+            this.process.kill('SIGTERM');
+            this.process = undefined;
+        }
+        this.isTurnActive = false;
+        this._onTurnComplete.fire({ status: 'ERROR' });
+        this._onStatusChange.fire('idle');
+    }
+
+    /**
+     * Starts a fresh session clearing conversation ID.
+     */
+    public newSession(): void {
+        this.currentConversationId = undefined;
+        this.restartSubprocess();
+    }
+
+    private restartSubprocess(): void {
+        if (this.process) {
+            this.process.kill('SIGTERM');
+            this.process = undefined;
+        }
+        this.ensureProcessStarted();
+    }
+
+    /**
+     * Parses and dispatches each NDJSON line emitted by agy.
+     */
+    private handleStreamLine(line: string): void {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith('{')) {
+            return;
+        }
+
+        try {
+            const event = JSON.parse(trimmed) as AgyServerEvent;
+
+            switch (event.event) {
+                case 'init':
+                    this.currentConversationId = event.conversation_id;
+                    break;
+
+                case 'step_update': {
+                    const stepUpdate = (event as AgyStepUpdateEvent).step_update;
+
+                    if (stepUpdate.step_type === 'agent_response') {
+                        if (stepUpdate.text_delta) {
+                            this._onStatusChange.fire('streaming');
+                            this._onTextDelta.fire(stepUpdate.text_delta);
+                        }
+                    } else if (stepUpdate.step_type === 'tool') {
+                        if (stepUpdate.state === 'ACTIVE') {
+                            this._onStatusChange.fire('executing_tool');
+                        }
+                        this._onToolEvent.fire({
+                            toolName: stepUpdate.tool_name || 'tool',
+                            state: stepUpdate.state,
+                            toolInfo: stepUpdate.tool_info,
+                            durationSeconds: stepUpdate.duration_seconds,
+                        });
+                    }
+                    break;
+                }
+
+                case 'result': {
+                    const result = (event as AgyResultEvent).result;
+                    this.isTurnActive = false;
+                    this._onTurnComplete.fire({
+                        status: result.status,
+                        usage: result.usage,
+                        durationSeconds: result.duration_seconds,
+                    });
+                    this._onStatusChange.fire('idle');
+                    break;
+                }
+            }
+        } catch (err) {
+            console.warn('[agy stream parse error]:', err, line);
+        }
+    }
+
+    public dispose(): void {
+        if (this.process) {
+            this.process.kill('SIGTERM');
+            this.process = undefined;
+        }
+        this.readlineInterface?.close();
+        this._onTextDelta.dispose();
+        this._onToolEvent.dispose();
+        this._onTurnComplete.dispose();
+        this._onStatusChange.dispose();
+        this._onError.dispose();
+    }
+}
