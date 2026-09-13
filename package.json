@@ -23,7 +23,16 @@
     "terminal",
     "cli"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onView:antigravity.welcomeView",
+    "onCommand:antigravity.openAgent",
+    "onCommand:antigravity.openTerminal",
+    "onCommand:antigravity.restartTerminal",
+    "onCommand:antigravity.stopTerminal",
+    "onCommand:antigravity.askAgent",
+    "onCommand:antigravity.explainCode",
+    "onCommand:antigravity.refactorCode"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -186,17 +195,12 @@
     "package": "npx @vscode/vsce package"
   },
   "devDependencies": {
-    "@types/diff": "^7.0.2",
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "@vscode/vsce": "^3.0.0",
     "eslint": "^8.50.0",
-    "mermaid": "^12.0.0",
     "typescript": "^5.3.0"
-  },
-  "dependencies": {
-    "diff": "^9.0.0"
   }
 }
