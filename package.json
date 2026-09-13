@@ -56,11 +56,7 @@
       },
       {
         "command": "antigravity.openAgent",
-        "title": "Antigravity: Open Coding Agent",
-        "icon": {
-          "light": "icon.png",
-          "dark": "icon.png"
-        }
+        "title": "Antigravity: Open Coding Agent"
       },
       {
         "command": "antigravity.askAgent",
@@ -175,13 +171,8 @@
     "menus": {
       "editor/title": [
         {
-          "command": "antigravity.openAgent",
-          "group": "navigation@1",
-          "when": "true"
-        },
-        {
           "command": "antigravity.openTerminal",
-          "group": "navigation@2",
+          "group": "navigation",
           "when": "true"
         }
       ],
