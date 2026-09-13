@@ -53,6 +53,7 @@ This extension mirrors the UX of Claude Code and Codex extensions, but is purpos
 
 | Date | Change | Description |
 | :--- | :--- | :--- |
+| **2026-09-13** | **Phase 8: @file Mentions, Command Terminal Viewer & Git Awareness** | Workspace file autocomplete when typing `@` in the composer with auto-context chips, dark interactive Terminal Console cards for `run_command` tool execution with stdout/stderr preview and copy button, and live Git branch and dirty-file status badge in the header with one-click Source Control reveal. |
 | **2026-09-13** | **Phase 7: Polish, Shortcuts & Accessibility** | Right-click editor actions (`Ask About Selected Code`, `Explain`, `Refactor`), keyboard navigation (`Escape`, `Cmd+K`/`Ctrl+K`, `Cmd+Shift+N`), ARIA accessibility roles, high-contrast support, and non-blocking asynchronous Mermaid script loading. |
 | **2026-09-13** | **Phase 6: Session History & Resumption** | **"📜 History"** drawer indexing previous conversations from `~/.gemini/antigravity-cli/brain/`, search bar filter, date groupings (`Today`, `Yesterday`, `Older`), transcript loader, and live resumption using `agy --conversation <id>`. |
 | **2026-09-13** | **Phase 5: Inline Diff Previews & Native Review** | In-chat unified diff cards with line numbers and green/red `+`/`-` line additions/deletions, collapse/expand toggle, and a **Review Diff** button opening VS Code's native `vscode.diff` split editor. |

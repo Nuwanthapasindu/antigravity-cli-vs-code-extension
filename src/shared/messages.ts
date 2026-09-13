@@ -42,6 +42,12 @@ export interface HistoricalMessage {
 
 export type AgentStatus = 'idle' | 'thinking' | 'streaming' | 'executing_tool' | 'error';
 
+export interface WorkspaceFileInfo {
+    label: string;
+    relativePath: string;
+    fsPath: string;
+}
+
 // Messages sent from Webview to Extension Host
 export type WebviewToHostMessage =
     | { command: 'ready' }
@@ -54,6 +60,8 @@ export type WebviewToHostMessage =
     | { command: 'open_terminal' }
     | { command: 'open_settings' }
     | { command: 'pick_context_file' }
+    | { command: 'search_files'; query: string }
+    | { command: 'open_git' }
     | { command: 'clear_conversation' }
     | { command: 'get_sessions' }
     | { command: 'resume_session'; sessionId: string }
@@ -69,6 +77,8 @@ export type HostToWebviewMessage =
           quota?: QuotaData;
           conversationId?: string;
           activeContext?: ContextItem[];
+          gitBranch?: string;
+          gitDirtyCount?: number;
       }
     | { command: 'status_change'; status: AgentStatus }
     | { command: 'turn_start'; prompt: string }
@@ -84,6 +94,8 @@ export type HostToWebviewMessage =
     | { command: 'file_changed'; change: FileChangeRecord }
     | { command: 'quota_update'; quota: QuotaData }
     | { command: 'context_update'; items: ContextItem[] }
+    | { command: 'search_files_result'; files: WorkspaceFileInfo[] }
+    | { command: 'git_status'; branch?: string; dirtyCount?: number }
     | { command: 'session_list'; sessions: SessionMetadata[]; activeSessionId?: string }
     | { command: 'session_loaded'; sessionId: string; messages: HistoricalMessage[] }
     | { command: 'error'; message: string };

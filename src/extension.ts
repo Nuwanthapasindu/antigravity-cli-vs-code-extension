@@ -5,6 +5,7 @@ import { AgyProcessManager } from './process/agyProcessManager';
 import { ContextManager } from './context/contextManager';
 import { DiffManager } from './diff/diffManager';
 import { SessionManager } from './session/sessionManager';
+import { GitManager } from './git/gitManager';
 import { AgentViewProvider } from './webview/agentViewProvider';
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -17,8 +18,9 @@ export function activate(context: vscode.ExtensionContext): void {
     const contextManager = new ContextManager();
     const diffManager = new DiffManager();
     const sessionManager = new SessionManager();
+    const gitManager = new GitManager();
 
-    context.subscriptions.push(processManager, contextManager, diffManager);
+    context.subscriptions.push(processManager, contextManager, diffManager, gitManager);
 
     // ── Agent Webview Provider (Sidebar & Editor Tab) ─────────────────────────
     const agentViewProvider = new AgentViewProvider(
@@ -27,6 +29,7 @@ export function activate(context: vscode.ExtensionContext): void {
         contextManager,
         diffManager,
         sessionManager,
+        gitManager,
         version
     );
 

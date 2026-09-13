@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import { ContextItem } from '../shared/messages';
+import * as path from 'path';
+import { ContextItem, WorkspaceFileInfo } from '../shared/messages';
 
 export class ContextManager implements vscode.Disposable {
     private activeContext: ContextItem[] = [];
@@ -29,6 +30,25 @@ export class ContextManager implements vscode.Disposable {
             this.activeContext.push(item);
             this._onDidChangeContext.fire(this.activeContext);
         }
+    }
+
+    public async searchWorkspaceFiles(query: string): Promise<WorkspaceFileInfo[]> {
+        const pattern = query && query.trim() ? `**/*${query.trim()}*` : '**/*';
+        const uris = await vscode.workspace.findFiles(
+            pattern,
+            '**/{node_modules,.git,out,dist,build,.vsix}/**',
+            20
+        );
+
+        return uris.map((uri) => {
+            const relativePath = vscode.workspace.asRelativePath(uri);
+            const label = path.basename(uri.fsPath);
+            return {
+                label,
+                relativePath,
+                fsPath: uri.fsPath,
+            };
+        });
     }
 
     public async pickWorkspaceFile(): Promise<ContextItem | undefined> {
