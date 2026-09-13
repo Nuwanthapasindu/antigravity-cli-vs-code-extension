@@ -27,6 +27,19 @@ export interface FileChangeRecord {
     hunks?: DiffHunk[];
 }
 
+export interface SessionMetadata {
+    id: string;
+    title: string;
+    updatedAt: number;
+    dateLabel: string;
+}
+
+export interface HistoricalMessage {
+    role: 'user' | 'agent';
+    text: string;
+    timestamp?: number;
+}
+
 export type AgentStatus = 'idle' | 'thinking' | 'streaming' | 'executing_tool' | 'error';
 
 // Messages sent from Webview to Extension Host
@@ -41,7 +54,10 @@ export type WebviewToHostMessage =
     | { command: 'open_terminal' }
     | { command: 'open_settings' }
     | { command: 'pick_context_file' }
-    | { command: 'clear_conversation' };
+    | { command: 'clear_conversation' }
+    | { command: 'get_sessions' }
+    | { command: 'resume_session'; sessionId: string }
+    | { command: 'new_session' };
 
 // Messages sent from Extension Host to Webview
 export type HostToWebviewMessage =
@@ -68,4 +84,6 @@ export type HostToWebviewMessage =
     | { command: 'file_changed'; change: FileChangeRecord }
     | { command: 'quota_update'; quota: QuotaData }
     | { command: 'context_update'; items: ContextItem[] }
+    | { command: 'session_list'; sessions: SessionMetadata[]; activeSessionId?: string }
+    | { command: 'session_loaded'; sessionId: string; messages: HistoricalMessage[] }
     | { command: 'error'; message: string };

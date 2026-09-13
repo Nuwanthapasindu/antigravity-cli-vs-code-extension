@@ -4,6 +4,7 @@ import { StatusBarManager } from './statusBarManager';
 import { AgyProcessManager } from './process/agyProcessManager';
 import { ContextManager } from './context/contextManager';
 import { DiffManager } from './diff/diffManager';
+import { SessionManager } from './session/sessionManager';
 import { AgentViewProvider } from './webview/agentViewProvider';
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -15,6 +16,7 @@ export function activate(context: vscode.ExtensionContext): void {
     const processManager = new AgyProcessManager();
     const contextManager = new ContextManager();
     const diffManager = new DiffManager();
+    const sessionManager = new SessionManager();
 
     context.subscriptions.push(processManager, contextManager, diffManager);
 
@@ -24,6 +26,7 @@ export function activate(context: vscode.ExtensionContext): void {
         processManager,
         contextManager,
         diffManager,
+        sessionManager,
         version
     );
 

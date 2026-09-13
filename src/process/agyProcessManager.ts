@@ -301,10 +301,31 @@ export class AgyProcessManager implements vscode.Disposable {
         this.restartSubprocess();
     }
 
+    /**
+     * Resumes an existing conversation session by its ID.
+     */
+    public resumeSession(conversationId: string): void {
+        this.currentConversationId = conversationId;
+        this.restartSubprocess();
+    }
+
     private restartSubprocess(): void {
+        this.isTurnActive = false;
         if (this.process) {
-            this.process.kill('SIGTERM');
+            try {
+                this.process.kill('SIGTERM');
+            } catch {
+                // ignore
+            }
             this.process = undefined;
+        }
+        if (this.readlineInterface) {
+            try {
+                this.readlineInterface.close();
+            } catch {
+                // ignore
+            }
+            this.readlineInterface = undefined;
         }
         this.ensureProcessStarted();
     }
